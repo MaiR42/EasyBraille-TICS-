@@ -1,6 +1,6 @@
 /*COMENTARIOS
 
-Version 1.0.2
+Version 1.0.1.1
 
 Instalar ARDUINO IDE
 
@@ -31,9 +31,7 @@ ERRORES:
 - Revisar si se muestran correctamente los simbolos
 
 CAMBIOS REALIZADOS:
-- BAJE RESOLUCIÓN DE LA CÁMARA
 - MSJS DE DEBUG EN SETUP()
-- OTROS
 */
 
 #include "esp_camera.h"
@@ -195,14 +193,14 @@ void setup() {
   digitalWrite(FLASH_GPIO_NUM, LOW);
   
   //Debug
-  Serial.println("DEBUG CONFIG FLASH");
+  Serial.println("DEBUG CONF FLASH");
 
   // Configuración expansor  
   Wire.begin(14, 15); // SDA = GPIO14, SCL = GPIO15 on ESP32-CAM
   Wire.setClock(100000);
 
     //Debug
-    Serial.println("DEBUG CONFIG Expansor (begin y clock)");
+    Serial.println("DEBUG CONF Expansor (begin y clock)");
 
   //new 
   
@@ -226,6 +224,7 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP); // Boton camara
   pinMode(previous_word_btn, INPUT_PULLUP); // Boton palabra ant
   pinMode(next_word_btn, INPUT_PULLUP); // Boton palabra sig
+  /*---------------------*/
 
   //Debug
   Serial.println("DEBUG CONFIG BOTONES CAM, PALABRAS ANT/SIG");
@@ -239,13 +238,9 @@ void setup() {
   Serial.println("DEBUG INICIALIZACION CÁMARA");
 
   // Configuracion del WebSocket para recibir texto del OCR
-  if (WiFi.status() == WL_CONNECTED) {
-    client.onMessage(onMessageCallback);
-    client.onEvent(onEventsCallback);
-    connectWebSocket();
-  } else {
-    Serial.println("WiFi no disponible - WebSocket no conectado");
-  }
+  client.onMessage(onMessageCallback);
+  client.onEvent(onEventsCallback);
+  connectWebSocket();
 
   //Debug
   Serial.println("DEBUG INICIALIZACION WEBSOCKET");
@@ -339,10 +334,11 @@ void loop() {
 /*===============F. SOLO CAMARA, ENVIADO Y RECIBIDO DE FOTOS, Y RELACIONADOS===============*/
 bool initCamera() {
 
-  
+  Serial.println("Prueba 1");
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
+  Serial.println("Prueba 2");
   config.pin_d0 = Y2_GPIO_NUM;
   config.pin_d1 = Y3_GPIO_NUM;
   config.pin_d2 = Y4_GPIO_NUM;
@@ -351,22 +347,25 @@ bool initCamera() {
   config.pin_d5 = Y7_GPIO_NUM;
   config.pin_d6 = Y8_GPIO_NUM;
   config.pin_d7 = Y9_GPIO_NUM;
+  Serial.println("Prueba 3");
   config.pin_xclk = XCLK_GPIO_NUM;
   config.pin_pclk = PCLK_GPIO_NUM;
   config.pin_vsync = VSYNC_GPIO_NUM;
   config.pin_href = HREF_GPIO_NUM;
+  Serial.println("Prueba 4");
   config.pin_sccb_sda = SIOD_GPIO_NUM;
   config.pin_sccb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
+  Serial.println("Prueba 5");
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
-  
+  Serial.println("Prueba 6");
   // Calidad de imagen
-  config.frame_size = FRAMESIZE_VGA;  // 640 x 480
+  config.frame_size = FRAMESIZE_VGA;  // 800x600
   config.jpeg_quality = 12;            // 0-63 (menor = mejor calidad)
   config.fb_count = 1;
-
+  Serial.println("Prueba 7");
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
     Serial.printf("Error inicializando camara: 0x%x", err);
@@ -394,40 +393,28 @@ void printResetReason() {
 }
 
 void connectToWiFi() {
-    WiFi.disconnect(true);
-    delay(1000);
-    WiFi.mode(WIFI_STA);
-    
-    // AGREGAR: Configurar hostname para evitar conflictos
-    WiFi.setHostname("ESP32-CAM-Braille");
+  WiFi.disconnect(true);
+  delay(1000);
+  WiFi.mode(WIFI_STA);
+
+  Serial.printf("Conectando a %s ", ssid);
+  WiFi.begin(ssid, password);
   
-    Serial.printf("Conectando a %s ", ssid);
-    WiFi.begin(ssid, password);
-    
-    int intentos = 0;
-    while (WiFi.status() != WL_CONNECTED && intentos < 30) { // Más intentos
-      delay(500);
-      Serial.print(".");
-      intentos++;
-    }
-    
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("\nConectado!");
-      Serial.print("Dirección IP: ");
-      Serial.println(WiFi.localIP());
-      
-      // AGREGAR: Verificar estabilidad de conexión
-      delay(2000); // Esperar estabilización
-      
-      if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Conexión WiFi estable");
-      } else {
-        Serial.println("Conexión WiFi inestable");
-      }
-    } else {
-      Serial.println("\nNo se pudo conectar a WiFi");
-      Serial.println("Continuando sin WiFi...");
-    }
+  int intentos = 0;
+  while (WiFi.status() != WL_CONNECTED && intentos < 20) {
+    delay(500);
+    Serial.print(".");
+    intentos++;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nConectado!");
+    Serial.print("Dirección IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("\nNo se pudo conectar a WiFi");
+    Serial.println("Continuando sin WiFi...");
+  }
 }
 
 void takePhotoAndSend() {
@@ -483,20 +470,9 @@ void takePhotoAndSend() {
 }
 
 void connectWebSocket() {
-    if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("WiFi no conectado - no se puede conectar WebSocket");
-      return;
-    }
-    
-    String wsUrl = "ws://" + String(serverIP) + ":" + String(serverPort) + "/ws";
-    
-    // Agregar timeout y manejo de errores
-    bool connected = client.connect(wsUrl);
-    if (connected) {
-      Serial.println("WebSocket conectado exitosamente");
-    } else {
-      Serial.println("Error conectando WebSocket");
-    }
+  String wsUrl = "ws://" + String(serverIP) + ":" + String(serverPort) + "/ws";
+  client.connect(wsUrl);
+  Serial.println("Conectando WebSocket para recibir texto OCR...");
 }
 
 void onMessageCallback(WebsocketsMessage message) {
@@ -629,18 +605,12 @@ void mostrarPatron(int modulo, unsigned char patron) {
 }
 
 void limpiarLEDs() {
-    if (!expansorDisponible) {
-      Serial.println("Expansor no disponible - no se pueden limpiar LEDs");
-      return; // SALIR SI NO HAY EXPANSOR
+  for (int modulo = 0; modulo < NUM_MODULOS; modulo++) {
+    for (int led = 0; led < NUM_LEDS_POR_MODULO; led++) {
+      expansor.write(braillePins[modulo][led], LOW);
     }
-    
-    for (int modulo = 0; modulo < NUM_MODULOS; modulo++) {
-      for (int led = 0; led < NUM_LEDS_POR_MODULO; led++) {
-        expansor.write(braillePins[modulo][led], LOW);
-      }
-    }
+  }
 }
-
 void testLEDs() {
   if (!expansorDisponible) {
     Serial.println("Test LEDs omitido - expansor no disponible");
