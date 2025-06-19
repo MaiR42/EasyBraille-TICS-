@@ -24,10 +24,6 @@ ORDEN DE DESIGNACION DE PINES PARA LOS MOD. BRAILLE:
 5 2
 4 1
 
-ERRORES:
-- No se muestran los primeros 3 caracteres
-- Revisar si se muestran correctamente los simbolos
-
 CAMBIOS REALIZADOS:
 - MSJS DE DEBUG EN SETUP()
 */
