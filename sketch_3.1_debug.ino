@@ -35,12 +35,12 @@ CAMBIOS REALIZADOS:
 #include <Wire.h>
 #include <PCF8574.h>
 
-#include <ArduinoWebsockets.h> // No funciona nada de la simulacion relacionado a websocket
+#include <ArduinoWebsockets.h>
 using namespace websockets;
 WebsocketsClient client;
 
 const int NUM_LEDS_POR_MODULO = 6;
-PCF8574 expansor(0x20); // Dirección I2C del PCF8574 // El 0x20 puede ser que deba cambiar
+PCF8574 expansor(0x20);
 String palabra = "";
 
 /*----------------------MODIFICABLES------------------------*/
